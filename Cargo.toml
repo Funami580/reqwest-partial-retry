@@ -1,0 +1,27 @@
+[package]
+name = "reqwest-partial-retry"
+version = "0.1.0"
+authors = ["Funami580"]
+edition = "2021"
+rust-version = "1.70.0"
+description = "Wrapper around reqwest to allow for easy partial retries"
+readme = "README.md"
+repository = "https://github.com/Funami580/reqwest-partial-retry"
+license = "MIT OR Apache-2.0"
+categories = ["web-programming::http-client"]
+
+[dependencies]
+reqwest = { version = "0.11", features = ["stream"] }
+hyperx_chantra = { version = "1.4.0", features = ["headers"] }
+bytes = "1.0"
+tokio = { version = "1.0", features = ["time"] }
+futures-core = "0.3"
+reqwest-retry = "0.3"
+reqwest-middleware = "0.2"
+retry-policies = "0.2"
+chrono = { version = "0.4", default-features = false }
+thiserror = "1.0"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
+futures-util = "0.3"
