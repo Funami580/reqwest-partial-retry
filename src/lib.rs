@@ -151,7 +151,7 @@ impl ConfigBuilder {
     ///
     /// Retries are counted in [`execute_resumable`](Client::execute_resumable)
     /// and [`bytes_stream_resumable`](ResumableResponse::bytes_stream_resumable),
-    /// and will not be reset in in between.
+    /// and will not be reset in-between.
     #[inline]
     pub fn retry_policy<P: RetryPolicy + Send + Sync + 'static>(mut self, retry_policy: P) -> Self {
         self.retry_policy = Box::new(retry_policy);
