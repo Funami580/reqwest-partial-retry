@@ -151,7 +151,7 @@ impl ConfigBuilder {
     ///
     /// Retries are counted in [`execute_resumable`](Client::execute_resumable)
     /// and [`bytes_stream_resumable`](ResumableResponse::bytes_stream_resumable),
-    /// and will not be reset in-between.
+    /// and will be reset whenever new data has been received.
     #[inline]
     pub fn retry_policy<P: RetryPolicy + Send + Sync + 'static>(mut self, retry_policy: P) -> Self {
         self.retry_policy = Box::new(retry_policy);
@@ -285,7 +285,6 @@ impl Client {
                         request,
                         response,
                         accept_byte_ranges,
-                        current_retries,
                     });
                 }
                 (Some(Retryable::Transient), response) | (None, response @ Err(_)) => {
@@ -322,7 +321,6 @@ pub struct ResumableResponse {
     request: reqwest::Request,
     response: reqwest::Response,
     accept_byte_ranges: bool,
-    current_retries: u32,
 }
 
 impl Deref for ResumableResponse {
@@ -371,7 +369,7 @@ impl ResumableResponse {
             accept_byte_ranges: self.accept_byte_ranges,
             pos: 0,
             read_bytes: 0,
-            current_retries: self.current_retries,
+            current_retries: 0,
             stream: Box::pin(self.response.bytes_stream()),
             next_request: None,
             sleep: Box::pin(tokio::time::sleep(Duration::ZERO)),
@@ -530,6 +528,7 @@ impl Stream for ResumableBytesStream {
                         }
 
                         self.stream = Box::pin(response.bytes_stream());
+                        self.current_retries = 0;
 
                         if let Some(timeout_duration) = self.client.config.inner.stream_timeout {
                             let stream_sleep_deadline = tokio::time::Instant::now() + timeout_duration;
@@ -586,6 +585,8 @@ impl Stream for ResumableBytesStream {
                     }
                     Poll::Ready(Some(Ok(bytes))) => {
                         if !bytes.is_empty() {
+                            self.current_retries = 0;
+
                             if let Some(timeout_duration) = self.client.config.inner.stream_timeout {
                                 let stream_sleep_deadline = tokio::time::Instant::now() + timeout_duration;
                                 self.stream_sleep.as_mut().reset(stream_sleep_deadline);
